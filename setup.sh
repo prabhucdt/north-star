@@ -1,6 +1,6 @@
 #!/bin/sh
 ##Variables
-namespace="ns"
+namespace="a"
 
 export HELM_NAMESPACE=$namespace
 
@@ -18,6 +18,6 @@ helm upgrade --install jenkins --namespace $namespace -f helm/jenkins/values.yam
 helm upgrade --install sonarqube --namespace $namespace -f helm/sonarqube/values.yaml sonarqube/sonarqube --create-namespace --wait
 
 ##Install Nexus-iq-server
-helm upgrade --install nexus-iq --namespace $namespace -f helm/nexus-iq/values.yaml sonatype/nexus-iq-server [ --version v90.0.0 ] --create-namespace --wait
+#helm upgrade --install nexus-iq --namespace $namespace -f helm/nexus-iq/values.yaml sonatype/nexus-iq-server --create-namespace --wait
 
 

@@ -9,10 +9,13 @@ replicaCount: 1
 deploymentStrategy: Recreate
 image:
   # Sonatype Official Public Image
-  repository: sonatype/nexus-iq-server
-  tag: 1.139.0
+  #repository: sonatype/nexus-iq-server
+  #tag: 1.139.0
+  repository: registry.connect.redhat.com/sonatype/nexus-iq-server
+  tag: 1.139.0-ubi-1
   pullPolicy: IfNotPresent
 imagePullSecrets:
+  - name: redhat-pull-secret
 # for image registries that require login, specify the name of the existing
 # kubernetes secret
 #   - name: <pull-secret-name>
@@ -75,19 +78,20 @@ serviceAccount:
   # If not set and create is true, a name is generated using the fullname template
   name:
 
-podSecurityContext: 
-  fsGroup: 2000
+podSecurityContext: {}
+  #  fsGroup: 2000
 
-securityContext: 
+securityContext: {}
 #  capabilities:
 #    drop:
 #    - ALL
 #  readOnlyRootFilesystem: true
 #  runAsNonRoot: true
-  runAsUser: 1001
+#  runAsUser: 1001
 
 service:
-  type: "ClusterIP"
+  #  type: "ClusterIP"
+  type: "LoadBalancer"
   port: 80
 
 ingress:
