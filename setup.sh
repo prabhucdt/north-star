@@ -18,6 +18,6 @@ helm upgrade --install jenkins --namespace $namespace -f helm/jenkins/values.yam
 helm upgrade --install sonarqube --namespace $namespace -f helm/sonarqube/values.yaml sonarqube/sonarqube --create-namespace --wait
 
 ##Install Nexus-iq-server
-helm upgrade --install nexus-iq --namespace $namespace -f helm/nexus-iq/values.yaml sonatype/nexus-iq-server --create-namespace --wait
+#helm upgrade --install nexus-iq --namespace $namespace -f helm/nexus-iq/values.yaml sonatype/nexus-iq-server --create-namespace --wait
 
 
