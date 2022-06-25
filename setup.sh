@@ -1,6 +1,6 @@
 #!/bin/sh
 ##Variables
-namespace="a"
+namespace="devops"
 
 export HELM_NAMESPACE=$namespace
 
