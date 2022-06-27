@@ -762,6 +762,14 @@ additionalAgents:
     image: jenkins/jnlp-agent-terraform
     tag: latest
 
+  docker:
+    podName: docker
+    customJenkinsLabels: docker
+    # An example of overriding the jnlp container
+    # sideContainerName: jnlp
+    image: jenkins/jnlp-agent-docker
+    tag: latest
+
 #additionalAgents: {}
 #  maven:
 #    podName: maven
