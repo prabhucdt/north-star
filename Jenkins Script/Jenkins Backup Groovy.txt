@@ -1,0 +1,31 @@
+pipeline {
+    agent {
+        label 'built-in'
+    }
+    stages {
+    stage('Checkout') {
+        steps {
+            git branch: 'main',
+                credentialsId: 'git-prabhu',
+                url: 'ssh://git@github.com/prabhucdt/backup-test.git'
+
+            sh "ls -lat; pwd"
+           }
+        }      
+        stage('Git Push') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'git-prabhu', keyFileVariable: 'SSH_KEY', usernameVariable: 'SSH_USER')]) {
+                withEnv(["GIT_SSH_COMMAND=ssh -o StrictHostKeyChecking=no -o User=${SSH_USER} -i ${SSH_KEY}"]) {
+                sh 'ls -lart ~/.ssh/id_rsa'
+                sh 'cp /var/jenkins_home/config.xml .'
+                sh 'pwd'
+                sh 'ls -lart'
+                sh 'git add .'
+                sh 'git commit -m "first commit"'
+                sh 'git push origin main'
+                }
+                }
+            }
+        }
+    }
+}
