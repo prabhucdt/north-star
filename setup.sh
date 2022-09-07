@@ -29,14 +29,13 @@ echo -e "Kubernetes cluster provisioning using terraform"
 echo -e "\e[0m"
 sleep 1
 
-echo -e "Skipping for now............."
+#echo -e "Skipping for now............."
 
-#cd terraform
-#terraform init
-#terraform plan
-#terraform validate
-#terraform apply -auto-approve
-#cd ..
+terraform -chdir="./terraform/aws" init
+terraform -chdir="./terraform/aws" plan
+terraform -chdir="./terraform/aws" validate
+terraform -chdir="./terraform/aws" apply -auto-approve
+cd ../..
 
 ##Stage 2 - Jenkins provisioning using Helm
 echo -e "\e[1;31m"
