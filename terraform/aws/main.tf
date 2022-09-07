@@ -15,8 +15,8 @@ module "ns_eks" {
     eks_cluster_name           = "NS_cluster"
     eks_cluster_subnet_ids     = ["subnet-06067acf739f83df4", "subnet-0b96619b7cb8f060f", "subnet-069f0aa79c28654fb", "subnet-065677af2b472b41b"]
     cluster_sg_name            = "nsC_security_group"
-    endpoint_private_access    = "true"
-    endpoint_public_access     = "false"
+    endpoint_private_access    = "false"
+    endpoint_public_access     = "true"
 }
 
 module "ns_nodegroup" {
