@@ -38,6 +38,7 @@ resource "aws_iam_role_policy_attachment" "AmazonEC2ContainerRegistryReadOnly" {
   role       = aws_iam_role.eks_nodes.name
 }
 
+/*
 # Nodes in private subnets
 resource "aws_eks_node_group" "main" {
   cluster_name        = var.cluster_name
@@ -67,9 +68,10 @@ resource "aws_eks_node_group" "main" {
     aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
   ]
 }
+*/
 
 
-/*
+
 # Nodes in public subnet
 resource "aws_eks_node_group" "public" {
   cluster_name    = var.cluster_name
@@ -99,7 +101,7 @@ resource "aws_eks_node_group" "public" {
     aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
   ]
 }
-*/
+
 
 
 
