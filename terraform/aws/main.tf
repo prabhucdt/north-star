@@ -15,8 +15,8 @@ module "ns_eks" {
     eks_cluster_name           = "NS_cluster"
     eks_cluster_subnet_ids     = ["subnet-06067acf739f83df4", "subnet-0b96619b7cb8f060f", "subnet-069f0aa79c28654fb", "subnet-065677af2b472b41b"]
     cluster_sg_name            = "nsC_security_group"
-    endpoint_private_access    = "true"
-    endpoint_public_access     = "false"
+    endpoint_private_access    = "false"
+    endpoint_public_access     = "true"
 }
 
 module "ns_nodegroup" {
@@ -29,12 +29,12 @@ module "ns_nodegroup" {
     ami_type                   = "AL2_x86_64"
     disk_size                  = 20
     instance_types             = ["t3.medium"]
-    pvt_desired_size           = 2
-    pvt_max_size               = 2
-    pvt_min_size               = 2
-    #pblc_desired_size         = 1
-    #pblc_max_size             = 1
-    #pblc_min_size             = 1
+    #pvt_desired_size           = 2
+    #pvt_max_size               = 2
+    #pvt_min_size               = 2
+    pblc_desired_size         = 2
+    pblc_max_size             = 2
+    pblc_min_size             = 1
     nodes_sg_name              = "new_node_group_security"
     source_security_group_id   = module.ns_eks.cluster_sg
 }
