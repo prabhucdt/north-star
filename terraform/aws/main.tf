@@ -29,12 +29,12 @@ module "ns_nodegroup" {
     ami_type                   = "AL2_x86_64"
     disk_size                  = 20
     instance_types             = ["t3.medium"]
-    pvt_desired_size           = 2
-    pvt_max_size               = 2
-    pvt_min_size               = 2
-    #pblc_desired_size         = 1
-    #pblc_max_size             = 1
-    #pblc_min_size             = 1
+    #pvt_desired_size           = 2
+    #pvt_max_size               = 2
+    #pvt_min_size               = 2
+    pblc_desired_size         = 2
+    pblc_max_size             = 2
+    pblc_min_size             = 1
     nodes_sg_name              = "new_node_group_security"
     source_security_group_id   = module.ns_eks.cluster_sg
 }
