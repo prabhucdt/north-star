@@ -52,6 +52,7 @@ variable "instance_types" {
   description = "Set of instance types associated with the EKS Node Group."
 }
 
+/*
 variable "pvt_desired_size" {
   description = "Desired number of worker nodes in private subnet"
   default     = 2
@@ -69,8 +70,9 @@ variable "pvt_min_size" {
   default     = 2
   type = number
 }
+*/
 
-/*
+
 variable "pblc_desired_size" {
   description = "Desired number of worker nodes in public subnet"
   default = 1
@@ -88,7 +90,7 @@ variable "pblc_min_size" {
   default = 1
   type = number
 }
-*/
+
 
 variable "nodes_sg_name" {
   description = "Name of the EKS node group Security Group"
