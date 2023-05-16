@@ -19,7 +19,7 @@ controller:
   # Used for label app.kubernetes.io/component
   componentName: "jenkins-controller"
   image: "jenkins/jenkins"
-  # tag: "2.332.3-jdk11"
+  # tag: "2.387.3-jdk11"
   tagLabel: jdk11
   imagePullPolicy: "Always"
   imagePullSecretName:
@@ -46,8 +46,7 @@ controller:
   # If you disable the non-Jenkins identity store and instead use the Jenkins internal one,
   # you should revert controller.adminUser to your preferred admin user:
   adminUser: "admin"
-  # adminPassword: <defaults to random>
-  adminPassword: Northstar
+  adminPassword: ProjectX
   admin:
     existingSecret: ""
     userKey: jenkins-admin-user
@@ -70,6 +69,8 @@ controller:
     limits:
       cpu: "2000m"
       memory: "4096Mi"
+  # Share process namespace to allow sidecar containers to interact with processes in other containers in the same pod
+  shareProcessNamespace: false
   # Overrides the init container default values
   # initContainerResources:
   #   requests:
@@ -92,7 +93,7 @@ controller:
   # The Protocol can be overwritten by specifying `controller.jenkinsUrlProtocol`.
   # jenkinsUrlProtocol: "https"
   # If you are not using the provided ingress you can specify `controller.jenkinsUrl` to change the url definition.
-  # jenkinsUrl: ""
+  jenkinsUrl: "https://build.dscrap.live"
   # If you set this prefix and use ingress controller then you might want to set the ingress path below
   # jenkinsUriPrefix: "/jenkins"
   # Enable pod security context (must be `true` if podSecurityContextOverride, runAsUser or fsGroup are set)
@@ -128,7 +129,6 @@ controller:
   # For minikube, set this to NodePort, elsewhere use LoadBalancer
   # Use ClusterIP if your setup includes ingress controller
   serviceType: LoadBalancer
-  # serviceType: ClusterIP
   # Use Local to preserve the client source IP and avoids a second hop for LoadBalancer and Nodeport type services,
   # but risks potentially imbalanced traffic spreading.
   serviceExternalTrafficPolicy:
@@ -143,7 +143,7 @@ controller:
   #   service.beta.kubernetes.io/aws-load-balancer-backend-protocol: https
   # Put labels on Jenkins controller pod
   podLabels: {}
-  # Used to create Ingress record (should used with ServiceType: ClusterIP)
+  # Used to create Ingress record (should be used with ServiceType: ClusterIP)
   # nodePort: <to set explicitly, choose port between 30000-32767
   # Enable Kubernetes Startup, Liveness and Readiness Probes
   # if Startup Probe is supported, enable it too
@@ -237,17 +237,24 @@ controller:
   extraPorts: []
   # - name: BuildInfoProxy
   #   port: 9000
+  #   targetPort: 9010 (Optional: Use to explicitly set targetPort if different from port)
 
   # List of plugins to be install during Jenkins controller start
   installPlugins:
-    - kubernetes:3600.v144b_cd192ca_a_
-    - workflow-aggregator:581.v0c46fa_697ffd
-    - git:4.11.3
-    - configuration-as-code:1429.v09b_044a_c93de
-    - ant:475.vf34069fef73c
-    - sonar:2.14
-    - jobConfigHistory:1148.v8607da_ef251e
-    - docker-workflow:1.29
+    - kubernetes:3900.va_dce992317b_4
+    - workflow-aggregator:596.v8c21c963d92d
+    - git:5.0.0
+    - configuration-as-code:1625.v27444588cc3d
+    - miniorange-saml-sp:2.2.0
+    - jobConfigHistory:1207.vd28a_54732f92
+    - sonar:2.15
+    - role-strategy:633.v836e5b_3e80a_5
+    # - docker-workflow:1.29
+    #  - azure-ad:345.vdb_07735a_767d
+    #  - ant:487.vd79d090d4ea_e
+    
+
+    # - SAML Single Sign On(SSO):2.1.0
 
   # Set to false to download the minimum required version of all dependencies.
   installLatestPlugins: true
@@ -269,6 +276,9 @@ controller:
   # Configures if plugins bundled with `controller.image` should be overwritten with the values of 'controller.installPlugins' on upgrade or redeployment.
   overwritePluginsFromImage: true
 
+  # Configures the restrictions for naming projects. Set this key to null or empty to skip it in the default config.
+  projectNamingStrategy: standard
+
   # Enable HTML parsing using OWASP Markup Formatter Plugin (antisamy-markup-formatter), useful with ghprb plugin.
   # The plugin is not installed by default, please update controller.installPlugins.
   enableRawHtmlMarkupFormatter: false
@@ -287,6 +297,10 @@ controller:
   # an existing secret "secret-credentials" and a key inside it named "github-password" should be used in Jcasc as ${secret-credentials-github-password}
   # 'name' and 'keyName' must be lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-',
   # and must start and end with an alphanumeric character (e.g. 'my-name',  or '123-abc')
+  # existingSecret existing secret "secret-credentials" and a key inside it named "github-username" should be used in Jcasc as ${github-username}
+  # When using existingSecret no need to specify the keyName under additionalExistingSecrets.
+  existingSecret:
+
   additionalExistingSecrets: []
   #  - name: secret-name-1
   #    keyName: username
@@ -320,11 +334,20 @@ controller:
   # etc.  Best reference is https://<jenkins_url>/configuration-as-code/reference.  The example below creates a welcome message:
   JCasC:
     defaultConfig: true
+    configUrls: []
+    # - https://acme.org/jenkins.yaml
+    # Remote URL:s for configuration files.
     configScripts: {}
     #  welcome-message: |
     #    jenkins:
     #      systemMessage: Welcome to our CI\CD server.  This Jenkins is configured and managed 'as code'.
-    # Ignored if securityRealm is defined in controller.JCasC.configScripts and
+    # Allows adding to the top-level security JCasC section. For legacy,  default the chart includes apiToken configurations
+    security:
+      apiToken:
+        creationOfLegacyTokenEnabled: false
+        tokenGenerationOnCreationEnabled: false
+        usageStatisticsEnabled: true
+    # Ignored if securityRealm is defined in controller.JCasC.configScripts
     securityRealm: |-
       local:
         allowsSignup: false
@@ -350,7 +373,7 @@ controller:
       # jcasc changes will cause a reboot and will only be applied at the subsequent start-up.  Auto-reload uses the
       # http://<jenkins_url>/reload-configuration-as-code endpoint to reapply config when changes to the configScripts are detected.
       enabled: true
-      image: kiwigrid/k8s-sidecar:1.15.0
+      image: kiwigrid/k8s-sidecar:1.23.1
       imagePullPolicy: IfNotPresent
       resources: {}
         #   limits:
@@ -530,12 +553,30 @@ controller:
     # Set a custom namespace where to deploy PrometheusRule resource
     prometheusRuleNamespace: ""
 
+    # RelabelConfigs to apply to samples before scraping. Prometheus Operator automatically adds
+    # relabelings for a few standard Kubernetes fields. The original scrape job’s name
+    # is available via the __tmp_prometheus_job_name label.
+    # More info: https://prometheus.io/docs/prometheus/latest/configuration/configuration/#relabel_config
+    relabelings: []
+    # MetricRelabelConfigs to apply to samples before ingestion.
+    metricRelabelings: []
+
+  googlePodMonitor:
+    # If enabled, It creates Google Managed Prometheus scraping config
+    enabled: false
+    # Set a custom namespace where to deploy PodMonitoring resource
+    # serviceMonitorNamespace: ""
+    scrapeInterval: 60s
+    # This is the default endpoint used by the prometheus plugin
+    scrapeEndpoint: /prometheus
+
   # Can be used to disable rendering controller test resources when using helm template
   testEnabled: true
 
   httpsKeyStore:
     jenkinsHttpsJksSecretName: ''
     enable: false
+    disableSecretMount: false
     httpPort: 8081
     path: "/var/jenkins_keystore"
     fileName: "keystore.jks"
@@ -586,8 +627,8 @@ controller:
 agent:
   enabled: true
   defaultsProviderTemplate: ""
-  # URL for connecting to the Jenkins contoller
-  jenkinsUrl:
+  # URL for connecting to the Jenkins controller
+  jenkinsUrl: 
   # connect to the specified host and port, instead of connecting directly to the Jenkins controller
   jenkinsTunnel:
   kubernetesConnectTimeout: 5
@@ -595,7 +636,7 @@ agent:
   maxRequestsPerHostStr: "32"
   namespace:
   image: "jenkins/inbound-agent"
-  tag: "4.11.2-4"
+  tag: "3107.v665000b_51092-5"
   workingDir: "/home/jenkins/agent"
   nodeUsageMode: "NORMAL"
   customJenkinsLabels: []
@@ -603,9 +644,11 @@ agent:
   imagePullSecretName:
   componentName: "jenkins-agent"
   websocket: false
+  directConnection: false
   privileged: false
   runAsUser:
   runAsGroup:
+  hostNetworking: false
   resources:
     requests:
       cpu: "512m"
@@ -679,6 +722,12 @@ agent:
   envVars: []
   # - name: PATH
   #   value: /usr/local/bin
+  # Mount a secret as environment variable
+  secretEnvVars: []
+  # - key: PATH
+  #   optional: false # default: false
+  #   secretKey: MY-K8S-PATH
+  #   secretName: my-k8s-secret
   nodeSelector: {}
   # Key Value selectors. Ex:
   # jenkins-agent: v1
@@ -716,6 +765,23 @@ agent:
   # Annotations to apply to the pod.
   annotations: {}
 
+  # Add additional containers to the agents.
+  # Containers specified here are added to all agents. Set key empty to remove container from additional agents.
+  additionalContainers: []
+  #  - sideContainerName: dind
+  #    image: docker
+  #    tag: dind
+  #    command: dockerd-entrypoint.sh
+  #    args: ""
+  #    privileged: true
+  #    resources:
+  #      requests:
+  #        cpu: 500m
+  #        memory: 1Gi
+  #      limits:
+  #        cpu: 1
+  #        memory: 2Gi
+
   # Disable the default Jenkins Agent configuration.
   # Useful when configuring agents only with the podTemplates value, since the default podTemplate populated by values mentioned above will be excluded in the rendered template.
   disableDefaultAgent: false
@@ -747,39 +813,7 @@ agent:
 # Here you can add additional agents
 # They inherit all values from `agent` so you only need to specify values which differ
 additionalAgents: 
-  maven:
-    podName: maven
-    customJenkinsLabels: maven
-    # An example of overriding the jnlp container
-    # sideContainerName: jnlp
-    image: jenkins/jnlp-agent-maven
-    tag: latest
 
-  terraform:
-    podName: terraform
-    customJenkinsLabels: terraform
-    # An example of overriding the jnlp container
-    # sideContainerName: jnlp
-    image: jenkins/jnlp-agent-terraform
-    tag: latest
-
-  docker:
-    podName: docker
-    customJenkinsLabels: docker
-    # An example of overriding the jnlp container
-    # sideContainerName: jnlp
-    image: jenkins/jnlp-agent-docker
-    tag: latest
-
-  mvndoc:
-    podName: mvndoc
-    customJenkinsLabels: mvndoc
-    # An example of overriding the jnlp container
-    # sideContainerName: jnlp
-    image: prabhucdt/jnlp-docker-mvn
-    tag: latest
-
-#additionalAgents: {}
 #  maven:
 #    podName: maven
 #    customJenkinsLabels: maven
@@ -788,15 +822,48 @@ additionalAgents:
 #    image: jenkins/jnlp-agent-maven
 #    tag: latest
 
-#  python:
-#    podName: python
-#    customJenkinsLabels: python
-#    sideContainerName: python
-#    image: python
-#    tag: "3"
-#    command: "/bin/sh -c"
-#    args: "cat"
-#    TTYEnabled: true
+  python:
+    podName: python
+    customJenkinsLabels: python
+    sideContainerName: python
+    image: python
+    tag: "3"
+    command: "/bin/sh -c"
+    args: "cat"
+    TTYEnabled: true
+
+# terraform:
+#     podName: terraform
+#     customJenkinsLabels: terraform
+#     # An example of overriding the jnlp container
+#     # sideContainerName: jnlp
+#     image: jenkins/jnlp-agent-terraform
+#     tag: latest
+
+  docker:
+      podName: docker
+      customJenkinsLabels: docker
+      # An example of overriding the jnlp container
+      # sideContainerName: jnlp
+      image: jenkins/jnlp-agent-docker
+      tag: latest
+  
+#   mvndoc:
+#     podName: mvndoc
+#     customJenkinsLabels: mvndoc
+#     # An example of overriding the jnlp container
+#     # sideContainerName: jnlp
+#     image: prabhucdt/jnlp-docker-mvn
+#     tag: latest
+
+  reactjs:
+      podName: reactjs
+      customJenkinsLabels: reactjs
+      image: node
+      tag: "14-alpine"
+      command: "/bin/sh -c"
+      args: "cat"
+      TTYEnabled: true
 
 persistence:
   enabled: true
@@ -851,6 +918,7 @@ serviceAccount:
   # The name of the service account is autogenerated by default
   name:
   annotations: {}
+  extraLabels: {}
   imagePullSecretName:
 
 
@@ -861,6 +929,7 @@ serviceAccountAgent:
   # If not set and create is true, a name is generated using the fullname template
   name:
   annotations: {}
+  extraLabels: {}
   imagePullSecretName:
 
 ## Backup cronjob configuration
@@ -888,6 +957,7 @@ backup:
   image:
     repository: "maorfr/kube-tasks"
     tag: "0.2.0"
+  imagePullSecretName:
   # Additional arguments for kube-tasks
   # Ref: https://github.com/maorfr/kube-tasks#simple-backup
   extraArgs: []
@@ -929,6 +999,9 @@ backup:
   securityContextCapabilities: {}
   #  drop:
   #    - NET_RAW
+cronJob:
+  apiVersion: batch/v1
+
 checkDeprecation: true
 
 awsSecurityGroupPolicies:
@@ -937,3 +1010,11 @@ awsSecurityGroupPolicies:
     - name: ""
       securityGroupIds: []
       podSelector: {}
+
+# Here you can configure unit tests values when executing the helm unittest in the CONTRIBUTING.md
+helmtest:
+  # A testing framework for bash
+  bats:
+    # Bash Automated Testing System (BATS)
+    image: "bats/bats"
+    tag: "1.9.0"

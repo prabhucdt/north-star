@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: jenkins-ingress
+  namespace: codinbuilder
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - build.dscrap.live
+    secretName: jenkins-tls
+  rules:
+  - host: "build.dscrap.live"
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: jenkins
+            port:
+              number: 8080
